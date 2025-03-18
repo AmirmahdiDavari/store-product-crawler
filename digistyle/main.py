@@ -5,12 +5,14 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-
+from selenium.webdriver.firefox.options import Options
 
 # Set up the Firefox WebDriver
 # service = Service(GeckoDriverManager().install())
-driver = webdriver.Firefox()
+options = Options()
 
+options.add_argument("-headless")
+driver = webdriver.Firefox(options=options)
 # صبر کردن برای مشاهده نتایج
 time.sleep(5)
 
@@ -57,10 +59,11 @@ def get_top_brand_list():
     # for href in href_list:
     #     print(href)
     # print(len(href_list))
-    result = ["https://www.digistyle.com/adamak-brand/",
-              "https://www.digistyle.com/ador-brand/",
-              "https://www.digistyle.com/rns-brand/",
-              "https://www.digistyle.com/arian-nakh-baf-brand/",
+    result = [
+        # "https://www.digistyle.com/adamak-brand/",
+        #       "https://www.digistyle.com/ador-brand/",
+        #       "https://www.digistyle.com/rns-brand/",
+        #       "https://www.digistyle.com/arian-nakh-baf-brand/",
               "https://www.digistyle.com/analia-brand/",
               "https://www.digistyle.com/styx-brand/",
               "https://www.digistyle.com/aspest-brand/",
@@ -166,7 +169,7 @@ def get_product_detail(product_id):
     pass
 
 
-def get_comment_detail(html_content,product_id):
+def get_comment_detail(html_content, product_id):
     soup = BeautifulSoup(html_content, "html.parser")
 
     comments_detail = []
@@ -219,7 +222,7 @@ def get_comment_detail(html_content,product_id):
         })
 
     # نام فایل CSV
-    csv_file = "commentsDigistyle.csv"
+    csv_file = "commentsDigistyle1.csv"
 
     # بررسی اینکه آیا فایل وجود دارد یا نه، برای جلوگیری از تکرار هدرها
     file_exists = os.path.isfile(csv_file)
@@ -241,6 +244,7 @@ def get_comment_detail(html_content,product_id):
     for comment in comments:
         print(comment)
 
+
 def get_product_comments(product_id):
     last_comments = ''
     for page in range(1, 1000):
@@ -260,16 +264,14 @@ def get_product_comments(product_id):
             if page > 1:
                 # Append response to existing comments (you would handle this in your UI)
                 print("Appending comments...")
-                print(response.text)  # Replace with actual appending logic
             else:
                 # Load new comments (you would handle this in your UI)
                 print("Loading comments...")
-                print(response.text)  # Replace with actual loading logic
 
             if last_comments == response.text:
                 break
             last_comments = response.text
-            get_comment_detail(response.text,product_id)
+            get_comment_detail(response.text, product_id)
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {e}")
         time.sleep(10)
@@ -279,6 +281,11 @@ brands = get_top_brand_list()
 for brand_url in brands:
     product_ids = get_product_brands(brand_url)
     for product_id in product_ids:
-        driver.get(f"https://www.digistyle.com/product/{product_id}")
-        get_product_detail(product_id)
-        get_product_comments(product_id)
+        while True:
+            try:
+                driver.get(f"https://www.digistyle.com/product/{product_id}")
+                get_product_detail(product_id)
+                get_product_comments(product_id)
+                break
+            except Exception as e:
+                print(f"Exception in get_product_detail {e}")
